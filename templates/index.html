@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Budget Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h1>Budget Tracker</h1>
+        <p class="balance">Saldo: <strong>{{ balance }} zł</strong></p>
+
+        <form action="/add" method="POST">
+            <select name="type">
+                <option value="income">Przychód</option>
+                <option value="expense">Wydatek</option>
+            </select>
+
+            <select name="category" required>
+                <option value="" disabled selected>Kategoria</option>
+                <option>Jedzenie</option>
+                <option>Rozrywka</option>
+                <option>Transport</option>
+                <option>Rachunki</option>
+                <option>Zakupy</option>
+                <option>Wynagrodzenie</option>
+                <option>Oszczędności</option>
+                <option>Inna</option>
+            </select>
+
+            <input type="text" name="amount" placeholder="Kwota" required />
+            <input type="text" name="description" placeholder="Opis" />
+            <button type="submit">Dodaj</button>
+        </form>
+
+        <div class="main">
+            <div class="transactions">
+                <h2>Przychody</h2>
+                <ul>
+                    {% for t in transactions if t.type == 'income' %}
+                        <li>
+                            <div>
+                                <strong>{{ t.category }}</strong> — {{ t.amount }} zł
+                                {% if t.description %}<br><small>{{ t.description }}</small>{% endif %}
+                            </div>
+                            <a href="/delete/{{ t.id }}">Usuń</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <h2>Wydatki</h2>
+                <ul>
+                    {% for t in transactions if t.type == 'expense' %}
+                        <li>
+                            <div>
+                                <strong>{{ t.category }}</strong> — {{ t.amount }} zł
+                                {% if t.description %}<br><small>{{ t.description }}</small>{% endif %}
+                            </div>
+                            <a href="/delete/{{ t.id }}">Usuń</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="charts">
+                <h2 style="text-align: center;">Wykresy</h2>
+                <canvas id="incomeChart"></canvas>
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        fetch('/data')
+            .then(res => res.json())
+            .then(data => {
+                const ctxExp = document.getElementById('expenseChart').getContext('2d');
+                new Chart(ctxExp, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(data.expenses),
+                        datasets: [{
+                            data: Object.values(data.expenses),
+                            backgroundColor: ['#9b59b6', '#3498db', '#f1c40f', '#2ecc71', '#e74c3c','#1abc9c', '#e67e22', '#34495e', '#fd79a8', '#00b894']
+
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Wydatki',
+                                color: 'white'
+                            },
+                            legend: {
+                                labels: { color: 'white' }
+                            }
+                        }
+                    }
+                });
+
+                const ctxInc = document.getElementById('incomeChart').getContext('2d');
+                new Chart(ctxInc, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(data.incomes),
+                        datasets: [{
+                            data: Object.values(data.incomes),
+                            backgroundColor: ['#9b59b6', '#3498db', '#f1c40f', '#2ecc71', '#e74c3c','#1abc9c', '#e67e22', '#34495e', '#fd79a8', '#00b894']
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Przychody',
+                                color: 'white'
+                            },
+                            legend: {
+                                labels: { color: 'white' }
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
+</body>
+</html>
